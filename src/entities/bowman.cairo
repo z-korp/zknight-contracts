@@ -1,10 +1,6 @@
-use array::ArrayTrait;
-use traits::Into;
-use dict::Felt252DictTrait;
-use nullable::NullableTrait;
+// Internal imports
 
 use zknight::components::tile::{Tile, TileTrait};
-use zknight::components::map::{_compose, _decompose};
 use zknight::entities::foe::FoeTrait;
 
 #[derive(Copy, Drop)]
@@ -121,63 +117,25 @@ impl BowmanImpl of FoeTrait<Bowman> {
         hits.span()
     }
 
-    #[inline(always)]
-    fn next(
-        self: Bowman, tile: Tile, target: Tile, size: u32, ref tiles: Felt252Dict<Nullable<Tile>>
-    ) -> u32 {
+    fn next(self: Bowman, tile: Tile, target: Tile, size: u32, ref neighbors: Span<Tile>) -> u32 {
         // [Compute] Current tile score
         let mut result = tile;
         let mut score = self.compute_score(tile, target);
 
-        // [Compute] Left neighbors scores
-        if tile.x > 0 {
-            let index: felt252 = _compose(tile.x - 1, tile.y, size).into();
-            let new_tile = tiles.get(index).deref();
-            if new_tile.is_ground() {
-                let new_score = self.compute_score(new_tile, target);
-                if new_score < score {
-                    score = new_score;
-                    result = new_tile;
-                };
-            };
-        };
-
-        // [Compute] Right neighbors scores
-        if tile.x < size - 1 {
-            let index: felt252 = _compose(tile.x + 1, tile.y, size).into();
-            let new_tile = tiles.get(index).deref();
-            if new_tile.is_ground() {
-                let new_score = self.compute_score(new_tile, target);
-                if new_score < score {
-                    score = new_score;
-                    result = new_tile;
-                };
-            };
-        };
-
-        // [Compute] Up neighbor scores
-        if tile.y > 0 {
-            let index: felt252 = _compose(tile.x, tile.y - 1, size).into();
-            let new_tile = tiles.get(index).deref();
-            if new_tile.is_ground() {
-                let new_score = self.compute_score(new_tile, target);
-                if new_score < score {
-                    score = new_score;
-                    result = new_tile;
-                };
-            };
-        };
-
-        // [Compute] Down neighbor scores
-        if tile.y < size - 1 {
-            let index: felt252 = _compose(tile.x, tile.y + 1, size).into();
-            let new_tile = tiles.get(index).deref();
-            if new_tile.is_ground() {
-                let new_score = self.compute_score(new_tile, target);
-                if new_score < score {
-                    score = new_score;
-                    result = new_tile;
-                };
+        // [Compute] Lowest score tile
+        loop {
+            match neighbors.pop_front() {
+                Option::Some(neighbor) => {
+                    let new_tile = *neighbor;
+                    let new_score = self.compute_score(new_tile, target);
+                    if new_score < score {
+                        score = new_score;
+                        result = new_tile;
+                    };
+                },
+                Option::None => {
+                    break;
+                },
             };
         };
 
@@ -198,59 +156,9 @@ mod tests {
 
     const SIZE: u32 = 8;
 
-    fn setup() -> Felt252Dict<Nullable<Tile>> {
-        let mut tiles: Felt252Dict<Nullable<Tile>> = Default::default();
-        let tile = Tile { game_id: 0, level: 0, index: 2 + SIZE * 1, _type: 0, x: 2, y: 1 };
-        tiles.insert(tile.index.into(), nullable_from_box(BoxTrait::new(tile)));
-        let tile = Tile { game_id: 0, level: 0, index: 3 + SIZE * 1, _type: 0, x: 3, y: 1 };
-        tiles.insert(tile.index.into(), nullable_from_box(BoxTrait::new(tile)));
-        let tile = Tile { game_id: 0, level: 0, index: 4 + SIZE * 1, _type: 0, x: 4, y: 1 };
-        tiles.insert(tile.index.into(), nullable_from_box(BoxTrait::new(tile)));
-        let tile = Tile { game_id: 0, level: 0, index: 2 + SIZE * 2, _type: 0, x: 2, y: 2 };
-        tiles.insert(tile.index.into(), nullable_from_box(BoxTrait::new(tile)));
-        let tile = Tile { game_id: 0, level: 0, index: 3 + SIZE * 2, _type: 0, x: 3, y: 2 };
-        tiles.insert(tile.index.into(), nullable_from_box(BoxTrait::new(tile)));
-        let tile = Tile { game_id: 0, level: 0, index: 4 + SIZE * 2, _type: 0, x: 4, y: 2 };
-        tiles.insert(tile.index.into(), nullable_from_box(BoxTrait::new(tile)));
-        let tile = Tile { game_id: 0, level: 0, index: 2 + SIZE * 3, _type: 0, x: 2, y: 3 };
-        tiles.insert(tile.index.into(), nullable_from_box(BoxTrait::new(tile)));
-        let tile = Tile { game_id: 0, level: 0, index: 3 + SIZE * 3, _type: 0, x: 3, y: 3 };
-        tiles.insert(tile.index.into(), nullable_from_box(BoxTrait::new(tile)));
-        let tile = Tile { game_id: 0, level: 0, index: 4 + SIZE * 3, _type: 0, x: 4, y: 3 };
-        tiles.insert(tile.index.into(), nullable_from_box(BoxTrait::new(tile)));
-        tiles
-    }
-
-    #[test]
-    #[available_gas(1_000_000)]
-    fn test_bowman_compute_score_close() {
-        let mut tiles = setup();
-        let char = CharacterTrait::new(0);
-        let bowman: Bowman = FoeTrait::new(char.health, char._type);
-        let tile = Tile { game_id: 0, level: 0, index: 3 + SIZE * 2, _type: 0, x: 3, y: 2 };
-        let target = TileTrait::new(2, 1);
-        let result = bowman.next(tile, target, SIZE, ref tiles);
-        let expected = 4 + SIZE * 2;
-        assert(result == expected, 'Wrong result');
-    }
-
-    #[test]
-    #[available_gas(1_000_000)]
-    fn test_bowman_compute_score_near() {
-        let mut tiles = setup();
-        let char = CharacterTrait::new(0);
-        let bowman: Bowman = FoeTrait::new(char.health, char._type);
-        let tile = Tile { game_id: 0, level: 0, index: 3 + SIZE * 2, _type: 0, x: 3, y: 2 };
-        let target = TileTrait::new(1, 1);
-        let result = bowman.next(tile, target, SIZE, ref tiles);
-        let expected = 3 + SIZE * 1;
-        assert(result == expected, 'Wrong result');
-    }
-
     #[test]
     #[available_gas(1_000_000)]
     fn test_bowman_get_hits_top_break() {
-        let mut tiles = setup();
         let char = CharacterTrait::new(1);
         let bowman: Bowman = FoeTrait::new(char.health, char._type);
         let tile = Tile { game_id: 0, level: 0, index: 3 + SIZE * 2, _type: 0, x: 3, y: 2 };
@@ -265,7 +173,6 @@ mod tests {
     #[test]
     #[available_gas(1_000_000)]
     fn test_bowman_get_hits_top() {
-        let mut tiles = setup();
         let char = CharacterTrait::new(1);
         let bowman: Bowman = FoeTrait::new(char.health, char._type);
         let tile = Tile { game_id: 0, level: 0, index: 7 + SIZE * 2, _type: 0, x: 7, y: 2 };
@@ -282,7 +189,6 @@ mod tests {
     #[test]
     #[available_gas(1_000_000)]
     fn test_bowman_get_hits_bottom() {
-        let mut tiles = setup();
         let char = CharacterTrait::new(1);
         let bowman: Bowman = FoeTrait::new(char.health, char._type);
         let tile = Tile { game_id: 0, level: 0, index: 1 + SIZE * 2, _type: 0, x: 1, y: 2 };
@@ -299,7 +205,6 @@ mod tests {
     #[test]
     #[available_gas(1_000_000)]
     fn test_bowman_get_hits_bottom_break() {
-        let mut tiles = setup();
         let char = CharacterTrait::new(1);
         let bowman: Bowman = FoeTrait::new(char.health, char._type);
         let tile = Tile { game_id: 0, level: 0, index: 4 + SIZE * 2, _type: 0, x: 4, y: 2 };
@@ -314,7 +219,6 @@ mod tests {
     #[test]
     #[available_gas(1_000_000)]
     fn test_bowman_get_hits_left() {
-        let mut tiles = setup();
         let char = CharacterTrait::new(1);
         let bowman: Bowman = FoeTrait::new(char.health, char._type);
         let tile = Tile { game_id: 0, level: 0, index: 1 + SIZE * 1, _type: 0, x: 1, y: 1 };
@@ -331,7 +235,6 @@ mod tests {
     #[test]
     #[available_gas(1_000_000)]
     fn test_bowman_get_hits_left_break() {
-        let mut tiles = setup();
         let char = CharacterTrait::new(1);
         let bowman: Bowman = FoeTrait::new(char.health, char._type);
         let tile = Tile { game_id: 0, level: 0, index: 1 + SIZE * 5, _type: 0, x: 1, y: 5 };
@@ -345,7 +248,6 @@ mod tests {
     #[test]
     #[available_gas(1_000_000)]
     fn test_bowman_get_hits_right_break() {
-        let mut tiles = setup();
         let char = CharacterTrait::new(1);
         let bowman: Bowman = FoeTrait::new(char.health, char._type);
         let tile = Tile { game_id: 0, level: 0, index: 1 + SIZE * 3, _type: 0, x: 1, y: 3 };
@@ -360,7 +262,6 @@ mod tests {
     #[test]
     #[available_gas(1_000_000)]
     fn test_bowman_get_hits_right() {
-        let mut tiles = setup();
         let char = CharacterTrait::new(1);
         let bowman: Bowman = FoeTrait::new(char.health, char._type);
         let tile = Tile { game_id: 0, level: 0, index: 1 + SIZE * 7, _type: 0, x: 1, y: 7 };

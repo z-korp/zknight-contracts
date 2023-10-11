@@ -1,4 +1,5 @@
 mod constants;
+mod datastore;
 
 mod entities {
     mod foe;
@@ -15,13 +16,13 @@ mod components {
 }
 
 mod systems {
-    mod create;
-    mod play;
-    mod spawn;
+    mod player;
 }
 
 #[cfg(test)]
 mod tests {
     mod setup;
+    mod create;
     mod play;
+    mod spawn;
 }
