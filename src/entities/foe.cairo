@@ -1,10 +1,7 @@
-use traits::Into;
-use dict::Felt252DictTrait;
-use nullable::NullableTrait;
+// Internal imports
 
 use zknight::constants::{BARBARIAN_TYPE, BOWMAN_TYPE, WIZARD_TYPE};
 use zknight::components::tile::{Tile, TileTrait};
-use zknight::components::map::{_compose, _decompose};
 use zknight::entities::barbarian::Barbarian;
 use zknight::entities::bowman::Bowman;
 use zknight::entities::wizard::Wizard;
@@ -21,9 +18,7 @@ trait FoeTrait<T> {
     fn can_move(self: T) -> bool;
     fn compute_score(self: T, tile: Tile, target: Tile) -> u32;
     fn get_hits(self: T, tile: Tile, target: Tile, size: u32) -> Span<u32>;
-    fn next(
-        self: T, tile: Tile, target: Tile, size: u32, ref tiles: Felt252Dict<Nullable<Tile>>
-    ) -> u32;
+    fn next(self: T, tile: Tile, target: Tile, size: u32, ref neighbors: Span<Tile>) -> u32;
 }
 
 impl FoeImpl of FoeTrait<Foe> {
@@ -83,19 +78,17 @@ impl FoeImpl of FoeTrait<Foe> {
         wizard.get_hits(tile, target, size)
     }
 
-    fn next(
-        self: Foe, tile: Tile, target: Tile, size: u32, ref tiles: Felt252Dict<Nullable<Tile>>
-    ) -> u32 {
+    fn next(self: Foe, tile: Tile, target: Tile, size: u32, ref neighbors: Span<Tile>) -> u32 {
         if self._type == BARBARIAN_TYPE {
             let barbarian = Barbarian { health: self.health };
-            return barbarian.next(tile, target, size, ref tiles);
+            return barbarian.next(tile, target, size, ref neighbors);
         }
         if self._type == BOWMAN_TYPE {
             let bowman = Bowman { health: self.health };
-            return bowman.next(tile, target, size, ref tiles);
+            return bowman.next(tile, target, size, ref neighbors);
         }
         let wizard = Wizard { health: self.health };
-        wizard.next(tile, target, size, ref tiles)
+        wizard.next(tile, target, size, ref neighbors)
     }
 }
 

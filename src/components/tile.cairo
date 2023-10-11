@@ -1,10 +1,10 @@
 use array::{SpanTrait, ArrayTrait};
 
 use zknight::constants::{
-    GROUND_TYPE, HOLE_TYPE, KNIGHT_TYPE, BARBARIAN_TYPE, BOWMAN_TYPE, WIZARD_TYPE
+    GROUND_TYPE, HOLE_TYPE, KNIGHT_TYPE, BARBARIAN_TYPE, BOWMAN_TYPE, WIZARD_TYPE, SIZE
 };
 
-#[derive(Component, Copy, Drop, Serde, SerdeLen, Felt252Dict)]
+#[derive(Model, Copy, Drop, Serde)]
 struct Tile {
     #[key]
     game_id: u32,
@@ -138,6 +138,8 @@ impl TileImpl of TileTrait {
 #[cfg(test)]
 mod tests {
     use array::{SpanTrait, ArrayTrait};
+    use zknight::constants::SIZE;
+    use zknight::components::map::_compose;
     use super::{Tile, TileTrait};
     use debug::PrintTrait;
 

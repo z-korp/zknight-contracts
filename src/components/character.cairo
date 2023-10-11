@@ -3,7 +3,7 @@ use array::SpanTrait;
 use zknight::constants::{KNIGHT_TYPE, BARBARIAN_TYPE, BOWMAN_TYPE, WIZARD_TYPE};
 use zknight::components::tile::Tile;
 
-#[derive(Component, Copy, Drop, Serde, SerdeLen)]
+#[derive(Model, Copy, Drop, Serde)]
 struct Character {
     #[key]
     game_id: u32,

@@ -12,7 +12,7 @@ use zknight::constants::{
 
 const MULTIPLIER: u128 = 10000;
 
-#[derive(Component, Copy, Drop, Serde, SerdeLen)]
+#[derive(Model, Copy, Drop, Serde)]
 struct Map {
     #[key]
     game_id: u32,
