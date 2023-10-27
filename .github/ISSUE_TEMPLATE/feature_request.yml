@@ -1,0 +1,21 @@
+name: Feature request
+description: Suggest a feature
+body:
+  - type: dropdown
+    id: service-name
+    attributes:
+      label: Which service is your feature related to?
+      multiple: true
+      options:
+        - Frontend
+        - Contracts
+    validations:
+      required: true
+
+  - type: textarea
+    id: Suggestion
+    attributes:
+      label: Feature Request
+      description: Describe the feature(s) you would like to be added.
+    validations:
+      required: true
