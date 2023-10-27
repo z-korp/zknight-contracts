@@ -3,8 +3,6 @@ use traits::Into;
 use dict::Felt252DictTrait;
 use poseidon::poseidon_hash_span;
 
-use alexandria_data_structures::array_ext::SpanTraitExt;
-
 use zknight::components::tile::{Tile, TileTrait};
 use zknight::constants::{
     NAME, SIZE, GROUND_TYPE, HOLE_TYPE, KNIGHT_TYPE, BARBARIAN_TYPE, BOWMAN_TYPE, WIZARD_TYPE

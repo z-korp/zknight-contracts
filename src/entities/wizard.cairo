@@ -130,9 +130,7 @@ impl WizardImpl of FoeTrait<Wizard> {
                         result = new_tile;
                     };
                 },
-                Option::None => {
-                    break;
-                },
+                Option::None => { break; },
             };
         };
 

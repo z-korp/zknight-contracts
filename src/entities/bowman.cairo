@@ -133,9 +133,7 @@ impl BowmanImpl of FoeTrait<Bowman> {
                         result = new_tile;
                     };
                 },
-                Option::None => {
-                    break;
-                },
+                Option::None => { break; },
             };
         };
 
